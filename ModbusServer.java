@@ -27,6 +27,7 @@ public class ModbusServer implements Runnable {
                 System.out.println(time + " - Connected node "
                         + node.getInetAddress().getHostAddress());
                 InputStream in = node.getInputStream();
+                this.close=false;
                 while (true) {
                     while (in.available() == 0) {
                         Thread.currentThread().sleep(100);
@@ -40,9 +41,10 @@ public class ModbusServer implements Runnable {
                     String hex = Engine.bytesToHex(data);
                     time = new Timestamp(System.currentTimeMillis()).toString();
                     System.out.println(time + " - Node: " + hex);
-                    engine.ncli.sendData(data);
+                    int res=engine.ncli.sendData(data);
                     // engine.mqtt.sendMsg("data", hex);
                     engine.lastData = data;
+                    if(res==-1) break;
                 }
 
             }
@@ -53,7 +55,7 @@ public class ModbusServer implements Runnable {
         }
     }
 
-    public void sendData(byte[] data) throws InterruptedException {
+    public int sendData(byte[] data) throws InterruptedException {
         if (this.node == null) {
             String time = new Timestamp(System.currentTimeMillis()).toString();
             System.out.println(time + " - Waiting for node ...");
@@ -61,12 +63,15 @@ public class ModbusServer implements Runnable {
                 Thread.currentThread().sleep(100);
         }
         try {
-            if (this.node.getOutputStream() == null)
-                return;
-
+            if (this.node.getOutputStream() == null) {
+                this.node=null;
+                this.close=true;
+                return -1;
+            }
             if (!node.isConnected()) {
-                close = true;
-                return;
+                this.node=null;
+                this.close=true;
+                return -1;
             }
 
             OutputStream out = this.node.getOutputStream();
@@ -75,8 +80,17 @@ public class ModbusServer implements Runnable {
 
         } catch (IOException e) {
             e.printStackTrace();
-            return;
+            try {
+                this.node.close();
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            this.node=null;
+            this.close=true;
+            return -1;
         }
+        return 0;
     }
 
 }

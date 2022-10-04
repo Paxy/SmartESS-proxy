@@ -27,7 +27,9 @@ public class FakeClient extends ModbusClient implements Runnable {
                 sendMsgToClient(cfg);
                 int cnt = 0;
                 while (true) {
-                    sendMsgToClient(getData);
+                    int res = sendMsgToClient(getData);
+                    if (res == -1)
+                        break;
                     Thread.currentThread()
                             .sleep(engine.fakeClientUpdateFrequency * 1000);
 
@@ -39,18 +41,17 @@ public class FakeClient extends ModbusClient implements Runnable {
             }
         }
     }
-
-    private void sendMsgToClient(String msg) throws InterruptedException {
+    public int sendData(byte[] data) throws InterruptedException {
+        return 0;
+    }
+    private int sendMsgToClient(String msg) throws InterruptedException {
         while (engine.nsrv == null || engine.nsrv.node == null)
             Thread.currentThread().sleep(100);
         byte[] data = engine.hexStringToByteArray(msg);
-        engine.nsrv.sendData(data);
+        int res = engine.nsrv.sendData(data);
         String time = new Timestamp(System.currentTimeMillis()).toString();
-        System.out.println(time+" - Server: " + msg);
+        System.out.println(time + " - Server: " + msg);
+        return res;
     }
-
-    public void sendData(byte[] data) throws InterruptedException {
-    }
-
 
 }

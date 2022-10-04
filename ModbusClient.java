@@ -32,7 +32,8 @@ public class ModbusClient implements Runnable {
                     String hex=Engine.bytesToHex(data);
                     time = new Timestamp(System.currentTimeMillis()).toString();
                     System.out.println(time+" - Server: "+hex);
-                    engine.nsrv.sendData(data);
+                    int ret=engine.nsrv.sendData(data);
+                    if(ret==-1) break;
                 }
 
 
@@ -43,14 +44,14 @@ public class ModbusClient implements Runnable {
         }
     }
 
-    public void sendData(byte[] data) throws InterruptedException {
+    public int sendData(byte[] data) throws InterruptedException {
         if(this.srv==null) {
             String time = new Timestamp(System.currentTimeMillis()).toString();
             System.out.println(time + " - Waiting for server ...");
             while(srv==null) Thread.currentThread().sleep(100);
         }
         try {
-            if(this.srv.getOutputStream()==null) return;
+            if(this.srv.getOutputStream()==null) return -1;
 
         OutputStream out=this.srv.getOutputStream();
         out.write(data);
@@ -58,8 +59,9 @@ public class ModbusClient implements Runnable {
 
         } catch (IOException e) {
             e.printStackTrace();
-            return;
+            return -1;
         }
+        return 0;
     }
 
 }
