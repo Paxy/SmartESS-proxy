@@ -1,4 +1,6 @@
+import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -6,10 +8,14 @@ public class Engine {
 
     static boolean fakeClient = true;
     static String mqttServer = "172.16.2.1";
+    static boolean enableMqttAuth=false;
+    static String mqttUser="";
+    static String mqttPass="";
     static int mqttPort = 1883;
     static String mqttTopic = "paxyhome/Inverter/";
     static int fakeClientUpdateFrequency = 10; // 10 seconds
     static String realModbusServer="47.242.188.205";
+
 
     static Executor pool = Executors.newFixedThreadPool(4);
     private static final byte[] HEX_ARRAY = "0123456789ABCDEF"
@@ -21,6 +27,19 @@ public class Engine {
     byte[] lastData;
 
     public Engine() throws Exception {
+
+        Properties p = new Properties();
+        p.load(new FileInputStream("conf.ini"));
+        fakeClient = Boolean.parseBoolean(p.getProperty("fakeClient"));
+        mqttServer = p.getProperty("mqttServer");
+        mqttPort = Integer.parseInt(p.getProperty("mqttPort"));
+        enableMqttAuth = Boolean.parseBoolean(p.getProperty("enableMqttAuth"));
+        mqttUser = p.getProperty("mqttUser");
+        mqttPass = p.getProperty("mqttPass");
+        mqttTopic = p.getProperty("mqttTopic");
+        fakeClientUpdateFrequency = Integer.parseInt(p.getProperty("updateFrequency"));
+
+
         nsrv = new ModbusServer(this);
         pool.execute(nsrv);
         if (!fakeClient)
@@ -29,6 +48,7 @@ public class Engine {
             ncli = new FakeClient(this);
         pool.execute(ncli);
         mqtt = new MQTTClient(this);
+        pool.execute(mqtt);
         ProcessInverterData procesor = new ProcessInverterData(this);
         pool.execute(procesor);
 
