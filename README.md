@@ -4,7 +4,7 @@ SmartESS (PowMr) to MQTT proxy
 Aim of the project is to adopt PowMr WiFi Plug Pro to send data over MQTT to HASS beside SmartESS cloud.
 It is achived by running SmartESS-proxy and poisoning DNS ess.eybond.com to point to the proxy.
 
-Place SmartESS-proxy.jar and conf.ini in same folder.
+For use without compiling, place content of bin/ to the same folder.
 
 Change parameters in conf.ini
 ```
